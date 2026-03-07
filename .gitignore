@@ -1,0 +1,8 @@
+# すべての階層の node_modules を無視
+node_modules/
+
+# フロントエンドのビルド成果物
+frontend/dist/
+
+# バックエンドのビルド成果物
+todo-backend/target/
