@@ -14,6 +14,14 @@ function App() {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
+  // 新規: 完了セクションの開閉状態
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // 未完了タスク：completed が false のものだけを抽出
+  const activeTodos = todos.filter(todo => !todo.completed);
+  // 完了済みタスク：completed が true のものだけを抽出
+  const completedTodos = todos.filter(todo => todo.completed);
+  
   const fetchTodos = async () => {
     try {
       setLoading(true);
@@ -121,8 +129,16 @@ function App() {
 
       {loading && <p className="text-center">読み込み中...</p>}
 
-      <ul className="space-y-3">
-        {todos.map(todo => (
+      {/* 未完了タスク */}
+      <h2 className="text-xl font-semibold mb-4 flex justify-between items-center">
+        未完了のタスク
+        <span className="text-sm font-normal text-gray-600">
+          {activeTodos.length} 件
+        </span>
+      </h2>
+
+      <ul className="space-y-3 mb-12">
+        {activeTodos.map(todo => (
           <li
             key={todo.id}
             className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
@@ -160,12 +176,74 @@ function App() {
           </li>
         ))}
 
-        {todos.length === 0 && !loading && (
-          <p className="text-center text-gray-500 py-10">まだタスクがありません</p>
+        {activeTodos.length === 0 && !loading && (
+          <p className="text-center text-gray-500 py-6">すべてのタスクが完了しました！🎉</p>
         )}
       </ul>
 
-      {/* 編集モーダル */}
+      {/* 完了済みセクション（accordion） */}
+      {completedTodos.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left"
+          >
+            <h2 className="text-xl font-semibold">
+              完了済み
+              <span className="ml-2 text-sm font-normal text-gray-600">
+                {completedTodos.length} 件
+              </span>
+            </h2>
+            <span className="text-2xl font-bold">
+              {showCompleted ? '−' : '+'}
+            </span>
+          </button>
+
+          {showCompleted && (
+            <ul className="space-y-3 mt-3">
+              {completedTodos.map(todo => (
+                <li
+                  key={todo.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={true}
+                      onChange={() => handleToggle(todo.id, true)}  // 解除可能
+                      className="w-5 h-5"
+                    />
+                    <div className="flex-1">
+                      <span className="line-through text-gray-600">{todo.title}</span>
+                      {todo.description && (
+                        <p className="text-sm text-gray-500 mt-1 line-through">
+                          {todo.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => startEdit(todo)}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => handleDelete(todo.id)}
+                      className="text-red-600 hover:text-red-800 font-medium"
+                    >
+                      削除
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* 編集モーダル（前回と同じ） */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
