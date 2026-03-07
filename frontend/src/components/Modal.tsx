@@ -12,7 +12,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center  bg-black/30"
       onClick={onClose}  // 外側クリックで閉じる
     >
       <div 
@@ -30,16 +30,6 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
         </div>
 
         {children}
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-          >
-            キャンセル
-          </button>
-          {/* 保存ボタンは子コンポーネント側で扱う */}
-        </div>
       </div>
     </div>
   );
