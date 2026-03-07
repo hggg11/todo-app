@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { Todo, Priority } from './types/todo';
 import { getTodos, createTodo, updateTodo, deleteTodo } from './lib/api';
-import Modal from './components/Modal';  // ← 新規追加
+import Modal from './components/Modal';
+import LoginForm from './components/LoginForm';
 
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   HIGH: { label: '高', className: 'bg-red-100 text-red-700' },
@@ -24,6 +25,7 @@ function App() {
   const [newDueDate, setNewDueDate] = useState('');
   const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
   const [loading, setLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // 編集用モーダル状態
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,7 +42,7 @@ function App() {
   const activeTodos = todos.filter(todo => !todo.completed);
   // 完了済みタスク：completed が true のものだけを抽出
   const completedTodos = todos.filter(todo => todo.completed);
-  
+
   const fetchTodos = async () => {
     try {
       setLoading(true);
@@ -134,6 +136,10 @@ function App() {
       alert('更新に失敗しました');
     }
   };
+
+  if (!isLoggedIn) {
+    return <LoginForm onLogin={() => setIsLoggedIn(true)} />;
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -264,7 +270,7 @@ function App() {
                     <input
                       type="checkbox"
                       checked={true}
-                      onChange={() => handleToggle(todo.id, true)}  // 解除可能
+                      onChange={() => handleToggle(todo.id, true)}
                       className="w-5 h-5"
                     />
                     <div className="flex-1">
@@ -303,7 +309,7 @@ function App() {
         </div>
       )}
 
-      {/* 編集モーダル（前回と同じ） */}
+      {/* 編集モーダル */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
