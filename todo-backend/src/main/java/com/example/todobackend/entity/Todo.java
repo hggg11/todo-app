@@ -4,6 +4,7 @@ package com.example.todobackend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,6 +26,14 @@ public class Todo {
     private String description;
 
     private boolean completed = false;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Priority priority = Priority.MEDIUM;
 
     private LocalDateTime createdAt;
 

@@ -1,11 +1,28 @@
 import { useState, useEffect } from 'react';
-import type { Todo, TodoCreateInput } from './types/todo';
+import type { Todo, Priority } from './types/todo';
 import { getTodos, createTodo, updateTodo, deleteTodo } from './lib/api';
 import Modal from './components/Modal';  // ← 新規追加
+
+const priorityConfig: Record<Priority, { label: string; className: string }> = {
+  HIGH: { label: '高', className: 'bg-red-100 text-red-700' },
+  MEDIUM: { label: '中', className: 'bg-yellow-100 text-yellow-700' },
+  LOW: { label: '低', className: 'bg-green-100 text-green-700' },
+};
+
+function PriorityBadge({ priority }: { priority: Priority }) {
+  const { label, className } = priorityConfig[priority];
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${className}`}>
+      {label}
+    </span>
+  );
+}
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTitle, setNewTitle] = useState('');
+  const [newDueDate, setNewDueDate] = useState('');
+  const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
   const [loading, setLoading] = useState(false);
 
   // 編集用モーダル状態
@@ -13,6 +30,8 @@ function App() {
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editPriority, setEditPriority] = useState<Priority>('MEDIUM');
 
   // 新規: 完了セクションの開閉状態
   const [showCompleted, setShowCompleted] = useState(false);
@@ -43,9 +62,15 @@ function App() {
     if (!newTitle.trim()) return;
 
     try {
-      const newTodo = await createTodo({ title: newTitle.trim() });
+      const newTodo = await createTodo({
+        title: newTitle.trim(),
+        dueDate: newDueDate || undefined,
+        priority: newPriority,
+      });
       setTodos(prev => [...prev, newTodo]);
       setNewTitle('');
+      setNewDueDate('');
+      setNewPriority('MEDIUM');
     } catch (err) {
       alert('追加に失敗しました');
     }
@@ -81,6 +106,8 @@ function App() {
     setEditingTodo(todo);
     setEditTitle(todo.title);
     setEditDescription(todo.description || '');
+    setEditDueDate(todo.dueDate || '');
+    setEditPriority(todo.priority);
     setIsModalOpen(true);
   };
 
@@ -96,7 +123,9 @@ function App() {
       const updated = await updateTodo(editingTodo.id, {
         title: editTitle.trim(),
         description: editDescription.trim() || undefined,
-        completed: editingTodo.completed
+        completed: editingTodo.completed,
+        dueDate: editDueDate || undefined,
+        priority: editPriority,
       });
       setTodos(prev => prev.map(t => t.id === editingTodo.id ? updated : t));
       setIsModalOpen(false);
@@ -111,20 +140,39 @@ function App() {
       <h1 className="text-3xl font-bold mb-8 text-center">TODO App</h1>
 
       {/* 追加フォーム */}
-      <form onSubmit={handleAdd} className="mb-10 flex gap-3">
-        <input
-          type="text"
-          value={newTitle}
-          onChange={e => setNewTitle(e.target.value)}
-          placeholder="新しいタスクを入力..."
-          className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
-          追加
-        </button>
+      <form onSubmit={handleAdd} className="mb-10 space-y-2">
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+            placeholder="新しいタスクを入力..."
+            className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            追加
+          </button>
+        </div>
+        <div className="flex gap-3">
+          <select
+            value={newPriority}
+            onChange={e => setNewPriority(e.target.value as Priority)}
+            className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="LOW">低</option>
+            <option value="MEDIUM">中</option>
+            <option value="HIGH">高</option>
+          </select>
+          <input
+            type="date"
+            value={newDueDate}
+            onChange={e => setNewDueDate(e.target.value)}
+            className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+        </div>
       </form>
 
       {loading && <p className="text-center">読み込み中...</p>}
@@ -151,11 +199,17 @@ function App() {
                 className="w-5 h-5"
               />
               <div className="flex-1">
-                <span className={todo.completed ? 'line-through text-gray-500' : ''}>
-                  {todo.title}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={todo.completed ? 'line-through text-gray-500' : ''}>
+                    {todo.title}
+                  </span>
+                  <PriorityBadge priority={todo.priority} />
+                </div>
                 {todo.description && (
                   <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
+                )}
+                {todo.dueDate && (
+                  <p className="text-xs text-gray-500 mt-1">期限: {todo.dueDate}</p>
                 )}
               </div>
             </div>
@@ -214,11 +268,17 @@ function App() {
                       className="w-5 h-5"
                     />
                     <div className="flex-1">
-                      <span className="line-through text-gray-600">{todo.title}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="line-through text-gray-600">{todo.title}</span>
+                        <PriorityBadge priority={todo.priority} />
+                      </div>
                       {todo.description && (
                         <p className="text-sm text-gray-500 mt-1 line-through">
                           {todo.description}
                         </p>
+                      )}
+                      {todo.dueDate && (
+                        <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>
                       )}
                     </div>
                   </div>
@@ -274,6 +334,35 @@ function App() {
               placeholder="詳細やメモを入力..."
             />
           </div>
+
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                優先度
+              </label>
+              <select
+                value={editPriority}
+                onChange={e => setEditPriority(e.target.value as Priority)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="LOW">低</option>
+                <option value="MEDIUM">中</option>
+                <option value="HIGH">高</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                期限（任意）
+              </label>
+              <input
+                type="date"
+                value={editDueDate}
+                onChange={e => setEditDueDate(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setIsModalOpen(false)}
