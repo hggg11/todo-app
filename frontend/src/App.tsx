@@ -25,7 +25,7 @@ function App() {
   const [newDueDate, setNewDueDate] = useState('');
   const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
   const [loading, setLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
 
   // 編集用モーダル状態
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,12 +35,10 @@ function App() {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState<Priority>('MEDIUM');
 
-  // 新規: 完了セクションの開閉状態
+  // 完了セクションの開閉状態
   const [showCompleted, setShowCompleted] = useState(false);
 
-  // 未完了タスク：completed が false のものだけを抽出
   const activeTodos = todos.filter(todo => !todo.completed);
-  // 完了済みタスク：completed が true のものだけを抽出
   const completedTodos = todos.filter(todo => todo.completed);
 
   const fetchTodos = async () => {
@@ -62,7 +60,6 @@ function App() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-
     try {
       const newTodo = await createTodo({
         title: newTitle.trim(),
@@ -82,11 +79,8 @@ function App() {
     try {
       const todo = todos.find(t => t.id === id);
       if (!todo) return;
-
       const updated = await updateTodo(id, {...todo, completed: !completed });
-      setTodos(prev =>
-        prev.map(t => (t.id === id ? updated : t))
-      );
+      setTodos(prev => prev.map(t => (t.id === id ? updated : t)));
     } catch (err) {
       alert('更新に失敗しました');
     }
@@ -94,7 +88,6 @@ function App() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('本当に削除しますか？')) return;
-
     try {
       await deleteTodo(id);
       setTodos(prev => prev.filter(t => t.id !== id));
@@ -103,7 +96,6 @@ function App() {
     }
   };
 
-  // 編集開始
   const startEdit = (todo: Todo) => {
     setEditingTodo(todo);
     setEditTitle(todo.title);
@@ -113,14 +105,12 @@ function App() {
     setIsModalOpen(true);
   };
 
-  // 編集保存
   const handleSaveEdit = async () => {
     if (!editingTodo) return;
     if (!editTitle.trim()) {
       alert('タイトルは必須です');
       return;
     }
-
     try {
       const updated = await updateTodo(editingTodo.id, {
         title: editTitle.trim(),
@@ -137,13 +127,26 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('isLoggedIn');
+  };
+
   if (!isLoggedIn) {
-    return <LoginForm onLogin={() => setIsLoggedIn(true)} />;
+    return <LoginForm onLogin={() => { setIsLoggedIn(true); localStorage.setItem('isLoggedIn', 'true'); }} />;
   }
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8 text-center">TODO App</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">TODO App</h1>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
+        >
+          ログアウト
+        </button>
+      </div>
 
       {/* 追加フォーム */}
       <form onSubmit={handleAdd} className="mb-10 space-y-2">
