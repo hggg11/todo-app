@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Todo, Priority } from './types/todo';
 import { getTodos, createTodo, updateTodo, deleteTodo } from './lib/api';
 import Modal from './components/Modal';  // ← 新規追加
+import LoginForm from './components/LoginForm';
 
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   HIGH: { label: '高', className: 'bg-red-100 text-red-700' },
@@ -25,6 +26,7 @@ function App() {
   const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
   const [loading, setLoading] = useState(false);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
   // 編集用モーダル状態
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
@@ -134,11 +136,22 @@ function App() {
       alert('更新に失敗しました');
     }
   };
+  
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('isLoggedIn')
+  };
+
+  if (!isLoggedIn) {
+  return <LoginForm onLogin={() => {setIsLoggedIn(true);localStorage.setItem('isLoggedIn','true')}} />;
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8 text-center">TODO App</h1>
-
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">TODO App</h1>
+        <button onClick={handleLogout}>ログアウト</button>
+      </div>
       {/* 追加フォーム */}
       <form onSubmit={handleAdd} className="mb-10 space-y-2">
         <div className="flex gap-3">

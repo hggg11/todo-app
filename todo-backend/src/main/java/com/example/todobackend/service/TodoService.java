@@ -28,12 +28,13 @@ public class TodoService {
     }
 
     public Todo update(Long id, Todo updatedTodo) {
-        System.out.println("Received Todo: " + updatedTodo.getTitle()); // ここで title が null ならフロントエンドの問題
         return todoRepository.findById(id)
                 .map(todo -> {
                     todo.setTitle(updatedTodo.getTitle());
                     todo.setDescription(updatedTodo.getDescription());
                     todo.setCompleted(updatedTodo.isCompleted());
+                    todo.setPriority(updatedTodo.getPriority());
+                    todo.setDueDate(updatedTodo.getDueDate());
                     return todoRepository.save(todo);
                 })
                 .orElseThrow(() -> new RuntimeException("Todo not found"));

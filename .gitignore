@@ -6,3 +6,6 @@ frontend/dist/
 
 # バックエンドのビルド成果物
 todo-backend/target/
+
+
+.claude/

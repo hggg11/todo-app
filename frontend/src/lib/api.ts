@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Todo, TodoCreateInput, TodoUpdateInput } from '../types/todo'; // これを追加
+import type { LoginInput } from '../types/auth';
 const api = axios.create({
   baseURL: 'http://localhost:8080/api',
   headers: {
@@ -29,4 +30,9 @@ export const updateTodo = async (id: number, todo: TodoUpdateInput): Promise<Tod
 
 export const deleteTodo = async (id: number): Promise<void> => {
   await api.delete(`/todos/${id}`);
+};
+
+export const login = async (input: LoginInput): Promise<string> => {
+  const res = await api.post('/auth/login', input);
+  return res.data;
 };
