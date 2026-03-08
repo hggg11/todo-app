@@ -143,7 +143,13 @@ function App() {
   };
 
   if (!isLoggedIn) {
-  return <LoginForm onLogin={() => {setIsLoggedIn(true);localStorage.setItem('isLoggedIn','true')}} />;
+  return <LoginForm onLogin={
+      (token: string) => {
+        setIsLoggedIn(true);
+        localStorage.setItem('isLoggedIn','true');
+        localStorage.setItem('token', token);
+      }
+    } />;
   }
 
   return (

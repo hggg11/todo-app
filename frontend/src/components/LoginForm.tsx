@@ -2,7 +2,7 @@ import { useState } from "react";
 import { login } from "../lib/api";
 
 type Props = {
-  onLogin: () => void;
+  onLogin: (token: string) => void;
 };
 
 export default function LoginForm({ onLogin }: Props) {
@@ -12,8 +12,8 @@ export default function LoginForm({ onLogin }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        await login({ username, password});  // ← 何を渡す？
-        onLogin();         // ← 成功時だけ呼ぶ
+        const token = await login({ username, password});  // ← 何を渡す？
+        onLogin(token);         // ← 成功時だけ呼ぶ
     } catch {
         setError('ログイン認証に失敗しました');   // ← 失敗時のメッセージ
     }
