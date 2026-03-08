@@ -27,7 +27,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
 
-  // 編集用モーダル状態
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -35,7 +34,6 @@ function App() {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState<Priority>('MEDIUM');
 
-  // 完了セクションの開閉状態
   const [showCompleted, setShowCompleted] = useState(false);
 
   const activeTodos = todos.filter(todo => !todo.completed);
@@ -79,7 +77,7 @@ function App() {
     try {
       const todo = todos.find(t => t.id === id);
       if (!todo) return;
-      const updated = await updateTodo(id, {...todo, completed: !completed });
+      const updated = await updateTodo(id, { ...todo, completed: !completed });
       setTodos(prev => prev.map(t => (t.id === id ? updated : t)));
     } catch (err) {
       alert('更新に失敗しました');
@@ -130,10 +128,15 @@ function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
   };
 
   if (!isLoggedIn) {
-    return <LoginForm onLogin={() => { setIsLoggedIn(true); localStorage.setItem('isLoggedIn', 'true'); }} />;
+    return <LoginForm onLogin={(token: string) => {
+      setIsLoggedIn(true);
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('token', token);
+    }} />;
   }
 
   return (
@@ -148,7 +151,6 @@ function App() {
         </button>
       </div>
 
-      {/* 追加フォーム */}
       <form onSubmit={handleAdd} className="mb-10 space-y-2">
         <div className="flex gap-3">
           <input
@@ -158,10 +160,7 @@ function App() {
             placeholder="新しいタスクを入力..."
             className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
+          <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
             追加
           </button>
         </div>
@@ -186,124 +185,63 @@ function App() {
 
       {loading && <p className="text-center">読み込み中...</p>}
 
-      {/* 未完了タスク */}
       <h2 className="text-xl font-semibold mb-4 flex justify-between items-center">
         未完了のタスク
-        <span className="text-sm font-normal text-gray-600">
-          {activeTodos.length} 件
-        </span>
+        <span className="text-sm font-normal text-gray-600">{activeTodos.length} 件</span>
       </h2>
 
       <ul className="space-y-3 mb-12">
         {activeTodos.map(todo => (
-          <li
-            key={todo.id}
-            className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
-          >
+          <li key={todo.id} className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition">
             <div className="flex items-center gap-3 flex-1">
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => handleToggle(todo.id, todo.completed)}
-                className="w-5 h-5"
-              />
+              <input type="checkbox" checked={todo.completed} onChange={() => handleToggle(todo.id, todo.completed)} className="w-5 h-5" />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className={todo.completed ? 'line-through text-gray-500' : ''}>
-                    {todo.title}
-                  </span>
+                  <span className={todo.completed ? 'line-through text-gray-500' : ''}>{todo.title}</span>
                   <PriorityBadge priority={todo.priority} />
                 </div>
-                {todo.description && (
-                  <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                )}
-                {todo.dueDate && (
-                  <p className="text-xs text-gray-500 mt-1">期限: {todo.dueDate}</p>
-                )}
+                {todo.description && <p className="text-sm text-gray-600 mt-1">{todo.description}</p>}
+                {todo.dueDate && <p className="text-xs text-gray-500 mt-1">期限: {todo.dueDate}</p>}
               </div>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => startEdit(todo)}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                編集
-              </button>
-              <button
-                onClick={() => handleDelete(todo.id)}
-                className="text-red-600 hover:text-red-800 font-medium"
-              >
-                削除
-              </button>
+              <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">編集</button>
+              <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">削除</button>
             </div>
           </li>
         ))}
-
         {activeTodos.length === 0 && !loading && (
           <p className="text-center text-gray-500 py-6">すべてのタスクが完了しました！🎉</p>
         )}
       </ul>
 
-      {/* 完了済みセクション（accordion） */}
       {completedTodos.length > 0 && (
         <div className="mt-8">
-          <button
-            onClick={() => setShowCompleted(!showCompleted)}
-            className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left"
-          >
+          <button onClick={() => setShowCompleted(!showCompleted)} className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left">
             <h2 className="text-xl font-semibold">
               完了済み
-              <span className="ml-2 text-sm font-normal text-gray-600">
-                {completedTodos.length} 件
-              </span>
+              <span className="ml-2 text-sm font-normal text-gray-600">{completedTodos.length} 件</span>
             </h2>
-            <span className="text-2xl font-bold">
-              {showCompleted ? '−' : '+'}
-            </span>
+            <span className="text-2xl font-bold">{showCompleted ? '−' : '+'}</span>
           </button>
-
           {showCompleted && (
             <ul className="space-y-3 mt-3">
               {completedTodos.map(todo => (
-                <li
-                  key={todo.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
-                >
+                <li key={todo.id} className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80">
                   <div className="flex items-center gap-3 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={true}
-                      onChange={() => handleToggle(todo.id, true)}
-                      className="w-5 h-5"
-                    />
+                    <input type="checkbox" checked={true} onChange={() => handleToggle(todo.id, true)} className="w-5 h-5" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="line-through text-gray-600">{todo.title}</span>
                         <PriorityBadge priority={todo.priority} />
                       </div>
-                      {todo.description && (
-                        <p className="text-sm text-gray-500 mt-1 line-through">
-                          {todo.description}
-                        </p>
-                      )}
-                      {todo.dueDate && (
-                        <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>
-                      )}
+                      {todo.description && <p className="text-sm text-gray-500 mt-1 line-through">{todo.description}</p>}
+                      {todo.dueDate && <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>}
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <button
-                      onClick={() => startEdit(todo)}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      編集
-                    </button>
-                    <button
-                      onClick={() => handleDelete(todo.id)}
-                      className="text-red-600 hover:text-red-800 font-medium"
-                    >
-                      削除
-                    </button>
+                    <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">編集</button>
+                    <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">削除</button>
                   </div>
                 </li>
               ))}
@@ -312,79 +250,33 @@ function App() {
         </div>
       )}
 
-      {/* 編集モーダル */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="タスクを編集"
-      >
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="タスクを編集">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              タイトル（必須）
-            </label>
-            <input
-              type="text"
-              value={editTitle}
-              onChange={e => setEditTitle(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">タイトル（必須）</label>
+            <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              詳細（任意）
-            </label>
-            <textarea
-              value={editDescription}
-              onChange={e => setEditDescription(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="詳細やメモを入力..."
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">詳細（任意）</label>
+            <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} rows={4} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="詳細やメモを入力..." />
           </div>
-
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                優先度
-              </label>
-              <select
-                value={editPriority}
-                onChange={e => setEditPriority(e.target.value as Priority)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-1">優先度</label>
+              <select value={editPriority} onChange={e => setEditPriority(e.target.value as Priority)} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="LOW">低</option>
                 <option value="MEDIUM">中</option>
                 <option value="HIGH">高</option>
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                期限（任意）
-              </label>
-              <input
-                type="date"
-                value={editDueDate}
-                onChange={e => setEditDueDate(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">期限（任意）</label>
+              <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
-
           <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-            >
-              キャンセル
-            </button>
-            <button
-              onClick={handleSaveEdit}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-            >
-              保存
-            </button>
+            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition">キャンセル</button>
+            <button onClick={handleSaveEdit} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">保存</button>
           </div>
         </div>
       </Modal>

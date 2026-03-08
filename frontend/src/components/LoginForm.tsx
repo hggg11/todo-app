@@ -2,7 +2,7 @@ import { useState } from "react";
 import { login } from "../lib/api";
 
 type Props = {
-  onLogin: () => void;
+  onLogin: (token: string) => void;
 };
 
 export default function LoginForm({ onLogin }: Props) {
@@ -13,8 +13,8 @@ export default function LoginForm({ onLogin }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login({ username, password });
-      onLogin();
+      const token = await login({ username, password });
+      onLogin(token);
     } catch {
       setError('ログイン認証に失敗しました');
     }
