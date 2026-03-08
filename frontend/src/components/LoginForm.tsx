@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { login } from "../lib/api";
 
 type Props = {
   onLogin: () => void;
@@ -7,11 +8,16 @@ type Props = {
 export default function LoginForm({ onLogin }: Props) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // ひとまずモック：何でもログインできる
-    onLogin();
+    try {
+      await login({ username, password });
+      onLogin();
+    } catch {
+      setError('ログイン認証に失敗しました');
+    }
   };
 
   return (
@@ -32,6 +38,7 @@ export default function LoginForm({ onLogin }: Props) {
           onChange={e => setPassword(e.target.value)}
         />
       </div>
+      {error && <p>{error}</p>}
       <div>
         <button type="submit">ログイン</button>
       </div>
