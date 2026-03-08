@@ -49,4 +49,8 @@ public class Todo {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @Column(name = "sort_order")
+    private Integer sortOrder;
+
 }

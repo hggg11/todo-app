@@ -44,4 +44,10 @@ public class TodoController {
         todoService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/reorder")
+    public ResponseEntity<Void> reorder(@RequestBody List<Long> ids) {
+        todoService.reorder(ids);
+        return ResponseEntity.ok().build();
+    }
 }

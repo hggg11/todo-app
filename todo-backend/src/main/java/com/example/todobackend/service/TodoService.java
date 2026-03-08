@@ -6,6 +6,7 @@ import com.example.todobackend.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,4 +44,13 @@ public class TodoService {
     public void delete(Long id) {
         todoRepository.deleteById(id);
     }
+
+    public void reorder(List<Long> ids) {
+        for (int i = 0; i < ids.size(); i++) {
+            Todo todo = todoRepository.findById(ids.get(i)).orElseThrow();
+            todo.setSortOrder(i);
+            todoRepository.save(todo);
+        }
+    }
+
 }

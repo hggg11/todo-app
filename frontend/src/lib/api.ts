@@ -40,6 +40,10 @@ export const deleteTodo = async (id: number): Promise<void> => {
   await api.delete(`/todos/${id}`);
 };
 
+export const reorderTodos = async (ids: number[]): Promise<void> => {
+  await api.put('/todos/reorder', ids);
+};
+
 export const login = async (input: LoginInput): Promise<string> => {
   const res = await api.post('/auth/login', input);
   return res.data;

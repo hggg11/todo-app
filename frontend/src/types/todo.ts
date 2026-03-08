@@ -9,6 +9,7 @@ export interface Todo {
   priority: Priority;
   createdAt: string;
   updatedAt: string;
+  sortOrder?: number;
 }
 
 export type TodoCreateInput = Pick<Todo, "title" | "description" | "dueDate" | "priority">;
