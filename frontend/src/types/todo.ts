@@ -10,13 +10,15 @@ export interface Todo {
   createdAt: string;
   updatedAt: string;
   sortOrder?: number;
+  icon?: string;
 }
 
-export type TodoCreateInput = Pick<Todo, "title" | "description" | "dueDate" | "priority">;
+export type TodoCreateInput = Pick<Todo, "title" | "description" | "dueDate" | "priority" | "icon">;
 export type TodoUpdateInput = {
     title: string;
     description?: string;
     completed: boolean;
     dueDate?: string;
     priority: Priority;
+    icon?: string;
 };

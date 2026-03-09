@@ -4,13 +4,13 @@ import type { Todo, Priority } from './types/todo';
 import { getTodos, createTodo, updateTodo, deleteTodo, reorderTodos } from './lib/api';
 import Modal from './components/Modal';
 import LoginForm from './components/LoginForm';
-
+import Calendar from './components/Calendar';
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   HIGH: { label: '高', className: 'bg-red-100 text-red-700' },
   MEDIUM: { label: '中', className: 'bg-yellow-100 text-yellow-700' },
   LOW: { label: '低', className: 'bg-green-100 text-green-700' },
 };
-
+const ICONS = ['📝', '💼', '📚', '🏃', '🍳', '🛒', '💪', '🎮', '🎵', '🏠', '✈️', '💊', '💻', '🛀', '🎬'];
 function PriorityBadge({ priority }: { priority: Priority }) {
   const { label, className } = priorityConfig[priority];
   return (
@@ -19,14 +19,14 @@ function PriorityBadge({ priority }: { priority: Priority }) {
     </span>
   );
 }
-
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTitle, setNewTitle] = useState('');
-  const [newDueDate, setNewDueDate] = useState('');
+  const [newDueDate, setNewDueDate] = useState(new Date().toISOString().split("T")[0]);
   const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
+  const [newIcon, setNewIcon] = useState<string>('');
+  const [editIcon, setEditIcon] = useState<string>('');
   const [loading, setLoading] = useState(false);
-
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
@@ -35,18 +35,15 @@ function App() {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState<Priority>('MEDIUM');
   const [showCompleted, setShowCompleted] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<Priority | 'ALL'>('ALL');
   const [filterDueDate, setFilterDueDate] = useState<'ALL' | 'TODAY' | 'THIS_WEEK' | 'OVERDUE'>('ALL');
-
+  const [activeTab, setActiveTab] = useState<'todos' | 'calendar'>('todos');
   const today = new Date().toISOString().split('T')[0];
   const nextWeekDate = new Date();
   nextWeekDate.setDate(nextWeekDate.getDate() + 7);
   const nextWeek = nextWeekDate.toISOString().split('T')[0];
-
   const q = searchQuery.toLowerCase();
-
   const activeTodos = todos
     .filter(todo => {
       if (todo.completed) return false;
@@ -58,9 +55,7 @@ function App() {
       return true;
     })
     .sort((a, b) => (a.sortOrder ?? Infinity) - (b.sortOrder ?? Infinity));
-
   const completedTodos = todos.filter(todo => todo.completed);
-
   const fetchTodos = async () => {
     try {
       setLoading(true);
@@ -72,72 +67,56 @@ function App() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchTodos();
   }, []);
-
-  // ドラッグ終了時の処理
   const handleDragEnd = async (result: DropResult) => {
-    // ドロップ先がなければ何もしない
     if (!result.destination) return;
-    // 同じ位置ならスキップ
     if (result.source.index === result.destination.index) return;
-
-    // 新しい順序を作成
     const items = Array.from(activeTodos);
     const [moved] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, moved);
-
-    // 楽観的UI更新（APIレスポンスを待たずに画面を更新）
     setTodos(prev => {
       const completedItems = prev.filter(t => t.completed);
       return [...items, ...completedItems];
     });
-
-    // APIに新しい順序を送信
     try {
       await reorderTodos(items.map(t => t.id));
     } catch {
-      // 失敗したら元に戻す
       fetchTodos();
     }
   };
-
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-
     try {
       const newTodo = await createTodo({
         title: newTitle.trim(),
         dueDate: newDueDate || undefined,
         priority: newPriority,
+        icon: newIcon,
       });
       setTodos(prev => [...prev, newTodo]);
       setNewTitle('');
       setNewDueDate('');
       setNewPriority('MEDIUM');
+      setNewIcon('');
     } catch (err) {
       alert('追加に失敗しました');
     }
   };
-
   const handleToggle = async (id: number, completed: boolean) => {
     try {
       const todo = todos.find(t => t.id === id);
       if (!todo) return;
-
       const updated = await updateTodo(id, { ...todo, completed: !completed });
       setTodos(prev => prev.map(t => (t.id === id ? updated : t)));
     } catch (err) {
       alert('更新に失敗しました');
     }
   };
-
   const handleDelete = async (id: number) => {
     if (!confirm('本当に削除しますか？')) return;
-
     try {
       await deleteTodo(id);
       setTodos(prev => prev.filter(t => t.id !== id));
@@ -145,7 +124,6 @@ function App() {
       alert('削除に失敗しました');
     }
   };
-
   const startEdit = (todo: Todo) => {
     setEditingTodo(todo);
     setEditTitle(todo.title);
@@ -153,15 +131,14 @@ function App() {
     setEditDueDate(todo.dueDate || '');
     setEditPriority(todo.priority);
     setIsModalOpen(true);
+    setEditIcon(todo.icon || '');
   };
-
   const handleSaveEdit = async () => {
     if (!editingTodo) return;
     if (!editTitle.trim()) {
       alert('タイトルは必須です');
       return;
     }
-
     try {
       const updated = await updateTodo(editingTodo.id, {
         title: editTitle.trim(),
@@ -169,6 +146,7 @@ function App() {
         completed: editingTodo.completed,
         dueDate: editDueDate || undefined,
         priority: editPriority,
+        icon: editIcon,
       });
       setTodos(prev => prev.map(t => t.id === editingTodo.id ? updated : t));
       setIsModalOpen(false);
@@ -177,12 +155,10 @@ function App() {
       alert('更新に失敗しました');
     }
   };
-
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('isLoggedIn');
   };
-
   if (!isLoggedIn) {
     return <LoginForm onLogin={(token: string) => {
       setIsLoggedIn(true);
@@ -190,143 +166,252 @@ function App() {
       localStorage.setItem('token', token);
     }} />;
   }
-
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="max-w-8xl mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">TODO App</h1>
-        <button onClick={handleLogout}>ログアウト</button>
-      </div>
-
-      {/* 検索 */}
-      <input
-        type="text"
-        value={searchQuery}
-        onChange={e => setSearchQuery(e.target.value)}
-        placeholder="タスクを検索..."
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-      />
-
-      {/* フィルター */}
-      <div className="flex gap-4 mb-6 flex-wrap">
-        <div className="flex gap-1">
-          {(['ALL', 'HIGH', 'MEDIUM', 'LOW'] as const).map(p => (
-            <button
-              key={p}
-              onClick={() => setFilterPriority(p)}
-              className={`px-3 py-1 rounded-full text-sm border transition ${
-                filterPriority === p
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-              }`}
-            >
-              {p === 'ALL' ? '全優先度' : p === 'HIGH' ? '高' : p === 'MEDIUM' ? '中' : '低'}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-1">
-          {(['ALL', 'TODAY', 'THIS_WEEK', 'OVERDUE'] as const).map(d => (
-            <button
-              key={d}
-              onClick={() => setFilterDueDate(d)}
-              className={`px-3 py-1 rounded-full text-sm border transition ${
-                filterDueDate === d
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-              }`}
-            >
-              {d === 'ALL' ? '全期限' : d === 'TODAY' ? '今日' : d === 'THIS_WEEK' ? '今週' : '期限切れ'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 追加フォーム */}
-      <form onSubmit={handleAdd} className="mb-10 space-y-2">
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            placeholder="新しいタスクを入力..."
-            className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        {/* タブ */}
+        <div className="flex gap-2">
           <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            onClick={() => setActiveTab('todos')}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              activeTab === 'todos'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
           >
-            追加
+            📋 TODOリスト
+          </button>
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              activeTab === 'calendar'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            📅 カレンダー
           </button>
         </div>
-        <div className="flex gap-3">
-          <select
-            value={newPriority}
-            onChange={e => setNewPriority(e.target.value as Priority)}
-            className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="LOW">低</option>
-            <option value="MEDIUM">中</option>
-            <option value="HIGH">高</option>
-          </select>
+        <button onClick={handleLogout}>ログアウト</button>
+      </div>
+      {/* メインコンテンツ：左にTODO、右にカレンダー */}
+      <div className="flex gap-10 items-start">
+
+        {/* 左：TODOリスト */}
+        <div className="w-2/5 min-w-0">
+          {/* 検索〜完了済みセクションをここに移動 */}
+          {/* 追加フォーム */}
+          <>
+          <form onSubmit={handleAdd} className="mb-10 space-y-2">
+            <div className="flex"> 
+              <input
+                type="text"
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                placeholder="新しいタスクを入力..."
+                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                追加
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <span>優先度：</span>
+              <select
+                value={newPriority}
+                onChange={e => setNewPriority(e.target.value as Priority)}
+                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                <option value="LOW">低</option>
+                <option value="MEDIUM">中</option>
+                <option value="HIGH">高</option>
+              </select>
+              <span>締切日：</span>
+              <input
+                type="date"
+                value={newDueDate}
+                onChange={e => setNewDueDate(e.target.value)}
+                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+            <div className="flex gap-3">
+              {/* アイコン選択 */}
+              <div className="flex gap-1 flex-wrap">
+                {ICONS.map(icon => (
+                  <button
+                    key={icon}
+                    type="button"
+                    onClick={() => setNewIcon(icon)}
+                    className={`text-xl p-1 rounded transition ${
+                      newIcon === icon
+                        ? 'bg-blue-100 ring-2 ring-blue-400'
+                        : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+                {newIcon && (
+                  <button type="button" onClick={() => setNewIcon('')}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-2">
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+          </form>
+                    {/* 検索 */}
           <input
-            type="date"
-            value={newDueDate}
-            onChange={e => setNewDueDate(e.target.value)}
-            className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="タスクを検索..."
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
           />
-        </div>
-      </form>
-
-      {loading && <p className="text-center">読み込み中...</p>}
-
-      {/* 未完了タスク（ドラッグ＆ドロップ対応） */}
-      <h2 className="text-xl font-semibold mb-4 flex justify-between items-center">
-        未完了のタスク
-        <span className="text-sm font-normal text-gray-600">{activeTodos.length} 件</span>
-      </h2>
-
-      {/* DragDropContext: D&D全体のコンテナ */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        {/* Droppable: ドロップできるエリア */}
-        <Droppable droppableId="active-todos">
-          {(provided) => (
-            <ul
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className="space-y-3 mb-12"
-            >
-              {activeTodos.map((todo, index) => (
-                <Draggable key={todo.id} draggableId={String(todo.id)} index={index}>
-                  {(provided) => (
+          {/* フィルター */}
+          <div className="flex gap-4 mb-6 flex-wrap">
+            <div className="flex gap-1">
+              {(['ALL', 'HIGH', 'MEDIUM', 'LOW'] as const).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setFilterPriority(p)}
+                  className={`px-3 py-1 rounded-full text-sm border transition ${
+                    filterPriority === p
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                  }`}
+                >
+                  {p === 'ALL' ? '全優先度' : p === 'HIGH' ? '高' : p === 'MEDIUM' ? '中' : '低'}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              {(['ALL', 'TODAY', 'THIS_WEEK', 'OVERDUE'] as const).map(d => (
+                <button
+                  key={d}
+                  onClick={() => setFilterDueDate(d)}
+                  className={`px-3 py-1 rounded-full text-sm border transition ${
+                    filterDueDate === d
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                  }`}
+                >
+                  {d === 'ALL' ? '全期限' : d === 'TODAY' ? '今日' : d === 'THIS_WEEK' ? '今週' : '期限切れ'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {loading && <p className="text-center">読み込み中...</p>}
+          {/* 未完了タスク */}
+          <h2 className="text-xl font-semibold mb-4 flex justify-between items-center">
+            未完了のタスク
+            <span className="text-sm font-normal text-gray-600">{activeTodos.length} 件</span>
+          </h2>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="active-todos">
+              {(provided) => (
+                <ul
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="space-y-3 mb-12"
+                >
+                  {activeTodos.map((todo, index) => (
+                    <Draggable key={todo.id} draggableId={String(todo.id)} index={index}>
+                      {(provided) => (
+                        <li
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div
+                              {...provided.dragHandleProps}
+                              className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing text-xl select-none"
+                            >
+                              ⠿
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={todo.completed}
+                              onChange={() => handleToggle(todo.id, todo.completed)}
+                              className="w-5 h-5"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                {todo.icon && <span className="text-xl">{todo.icon}</span>}
+                                <span>{todo.title}</span>
+                                <PriorityBadge priority={todo.priority} />
+                              </div>
+                              {todo.description && (
+                                <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
+                              )}
+                              {todo.dueDate && (
+                                <p className="text-xs text-gray-500 mt-1">期限: {todo.dueDate}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-3">
+                            <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
+                              編集
+                            </button>
+                            <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">
+                              削除
+                            </button>
+                          </div>
+                        </li>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                  {activeTodos.length === 0 && !loading && (
+                    <p className="text-center text-gray-500 py-6">タスクが見つかりません</p>
+                  )}
+                </ul>
+              )}
+            </Droppable>
+          </DragDropContext>
+          {/* 完了済みセクション */}
+          {completedTodos.length > 0 && (
+            <div className="mt-8">
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left"
+              >
+                <h2 className="text-xl font-semibold">
+                  完了済み
+                  <span className="ml-2 text-sm font-normal text-gray-600">{completedTodos.length} 件</span>
+                </h2>
+                <span className="text-2xl font-bold">{showCompleted ? '−' : '+'}</span>
+              </button>
+              {showCompleted && (
+                <ul className="space-y-3 mt-3">
+                  {completedTodos.map(todo => (
                     <li
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
+                      key={todo.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
                     >
                       <div className="flex items-center gap-3 flex-1">
-                        {/* ドラッグハンドル */}
-                        <div
-                          {...provided.dragHandleProps}
-                          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing text-xl select-none"
-                        >
-                          ⠿
-                        </div>
                         <input
                           type="checkbox"
-                          checked={todo.completed}
-                          onChange={() => handleToggle(todo.id, todo.completed)}
+                          checked={true}
+                          onChange={() => handleToggle(todo.id, true)}
                           className="w-5 h-5"
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span>{todo.title}</span>
+                            {todo.icon && <span className="text-xl">{todo.icon}</span>}
+                            <span className="line-through text-gray-600">{todo.title}</span>
                             <PriorityBadge priority={todo.priority} />
                           </div>
                           {todo.description && (
-                            <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
+                            <p className="text-sm text-gray-500 mt-1 line-through">{todo.description}</p>
                           )}
                           {todo.dueDate && (
-                            <p className="text-xs text-gray-500 mt-1">期限: {todo.dueDate}</p>
+                            <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>
                           )}
                         </div>
                       </div>
@@ -339,78 +424,46 @@ function App() {
                         </button>
                       </div>
                     </li>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-
-              {activeTodos.length === 0 && !loading && (
-                <p className="text-center text-gray-500 py-6">タスクが見つかりません</p>
+                  ))}
+                </ul>
               )}
-            </ul>
+            </div>
           )}
-        </Droppable>
-      </DragDropContext>
-
-      {/* 完了済みセクション */}
-      {completedTodos.length > 0 && (
-        <div className="mt-8">
-          <button
-            onClick={() => setShowCompleted(!showCompleted)}
-            className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left"
-          >
-            <h2 className="text-xl font-semibold">
-              完了済み
-              <span className="ml-2 text-sm font-normal text-gray-600">{completedTodos.length} 件</span>
-            </h2>
-            <span className="text-2xl font-bold">{showCompleted ? '−' : '+'}</span>
-          </button>
-
-          {showCompleted && (
-            <ul className="space-y-3 mt-3">
-              {completedTodos.map(todo => (
-                <li
-                  key={todo.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={true}
-                      onChange={() => handleToggle(todo.id, true)}
-                      className="w-5 h-5"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="line-through text-gray-600">{todo.title}</span>
-                        <PriorityBadge priority={todo.priority} />
-                      </div>
-                      {todo.description && (
-                        <p className="text-sm text-gray-500 mt-1 line-through">{todo.description}</p>
-                      )}
-                      {todo.dueDate && (
-                        <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
-                      編集
-                    </button>
-                    <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">
-                      削除
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+        </>
         </div>
-      )}
+        {/* 右：カレンダー（スクロールしても固定） */}
+        <div className="flex-1 sticky top-6">
+          <Calendar completedTodos={completedTodos} />
+        </div>
+
+      </div>
 
       {/* 編集モーダル */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="タスクを編集">
         <div className="space-y-4">
+          {/* アイコン選択 */}
+          <div className="flex gap-1 flex-wrap">
+            {ICONS.map(icon => (
+              <button
+                key={icon}
+                type="button"
+                onClick={() => setEditIcon(icon)}
+                className={`text-xl p-1 rounded transition ${
+                  editIcon === icon
+                    ? 'bg-blue-100 ring-2 ring-blue-400'
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                {icon}
+              </button>
+            ))}
+            {editIcon && (
+              <button type="button" onClick={() => setEditIcon('')}
+                className="text-xs text-gray-400 hover:text-gray-600 px-2">
+                ✕
+              </button>
+            )}
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">タイトル（必須）</label>
             <input
@@ -472,5 +525,4 @@ function App() {
     </div>
   );
 }
-
 export default App;

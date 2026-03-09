@@ -30,6 +30,7 @@ public class Todo {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    private String icon;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
