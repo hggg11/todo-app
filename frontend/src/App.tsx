@@ -68,6 +68,10 @@ function App() {
     }
   };
   useEffect(() => {
+    document.title = `TODO (${activeTodos.length}件)`;
+  }, [activeTodos.length]);
+
+  useEffect(() => {
     fetchTodos();
   }, []);
   const handleDragEnd = async (result: DropResult) => {
