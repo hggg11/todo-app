@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -50,6 +51,45 @@ class TodoServiceTest {
         // Assert（確認）：結果を検証
         assertThat(result.getTitle()).isEqualTo("新しいタイトル");
         assertThat(result.getPriority()).isEqualTo(Priority.HIGH);
+    }
+
+    @Test
+    void reorder_sortOrderが順番通りに設定される() {
+        // Arrange
+        Todo todo1 = Todo.builder().id(1L).title("タスク1").completed(false).priority(Priority.MEDIUM).build();
+        Todo todo2 = Todo.builder().id(2L).title("タスク2").completed(false).priority(Priority.MEDIUM).build();
+        Todo todo3 = Todo.builder().id(3L).title("タスク3").completed(false).priority(Priority.MEDIUM).build();
+
+        when(todoRepository.findById(3L)).thenReturn(Optional.of(todo3));
+        when(todoRepository.findById(1L)).thenReturn(Optional.of(todo1));
+        when(todoRepository.findById(2L)).thenReturn(Optional.of(todo2));
+
+        // Act
+        todoService.reorder(List.of(3L, 1L, 2L));
+
+        // Assert
+        assertThat(todo3.getSortOrder()).isEqualTo(0);
+        assertThat(todo1.getSortOrder()).isEqualTo(1);
+        assertThat(todo2.getSortOrder()).isEqualTo(2);
+        verify(todoRepository, times(3)).save(any());
+    }
+
+    @Test
+    void update_存在しないIDなら例外が発生する() {
+        // Arrange
+        Todo updated = Todo.builder()
+                .title("新しいタイトル")
+                .completed(false)
+                .priority(Priority.HIGH)
+                .build();
+
+        // 存在しないIDなのでemptyを返す
+        when(todoRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // Act & Assert：例外が投げられることを確認
+        assertThatThrownBy(() -> todoService.update(99L, updated))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Todo not found");
     }
 
 }

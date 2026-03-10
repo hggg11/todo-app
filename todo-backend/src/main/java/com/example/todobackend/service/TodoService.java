@@ -33,7 +33,7 @@ public class TodoService {
                 .map(todo -> {
                     todo.setTitle(updatedTodo.getTitle());
                     todo.setDescription(updatedTodo.getDescription());
-                    todo.setCompleted(updatedTodo.isCompleted());
+                    todo.setStatus(updatedTodo.getStatus());
                     todo.setPriority(updatedTodo.getPriority());
                     todo.setDueDate(updatedTodo.getDueDate());
                     todo.setIcon(updatedTodo.getIcon());

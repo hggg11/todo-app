@@ -25,8 +25,6 @@ public class Todo {
 
     private String description;
 
-    private boolean completed = false;
-
     @Column(name = "due_date")
     private LocalDate dueDate;
 
@@ -53,5 +51,11 @@ public class Todo {
 
     @Column(name = "sort_order")
     private Integer sortOrder;
+
+    // 追加
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Status status = Status.ACTIVE;
 
 }

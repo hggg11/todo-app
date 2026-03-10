@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import type { Todo, Priority } from './types/todo';
+import type { Todo, Priority, Status } from './types/todo';
 import { getTodos, createTodo, updateTodo, deleteTodo, reorderTodos } from './lib/api';
 import Modal from './components/Modal';
 import LoginForm from './components/LoginForm';
@@ -46,7 +46,7 @@ function App() {
   const q = searchQuery.toLowerCase();
   const activeTodos = todos
     .filter(todo => {
-      if (todo.completed) return false;
+      todo.status === 'ACTIVE'
       if (!todo.title.toLowerCase().includes(q) && !todo.description?.toLowerCase().includes(q)) return false;
       if (filterPriority !== 'ALL' && todo.priority !== filterPriority) return false;
       if (filterDueDate === 'TODAY' && todo.dueDate !== today) return false;
@@ -55,7 +55,8 @@ function App() {
       return true;
     })
     .sort((a, b) => (a.sortOrder ?? Infinity) - (b.sortOrder ?? Infinity));
-  const completedTodos = todos.filter(todo => todo.completed);
+  const completedTodos = todos.filter(todo => todo.status === 'COMPLETED');
+  const cancelledTodos = todos.filter(todo => todo.status === 'CANCELLED');
   const fetchTodos = async () => {
     try {
       setLoading(true);
@@ -109,16 +110,17 @@ function App() {
       alert('追加に失敗しました');
     }
   };
-  const handleToggle = async (id: number, completed: boolean) => {
+  const handleStatusChange = async (id: number, newStatus: Status) => {
     try {
       const todo = todos.find(t => t.id === id);
       if (!todo) return;
-      const updated = await updateTodo(id, { ...todo, completed: !completed });
+      const updated = await updateTodo(id, { ...todo, status: newStatus });
       setTodos(prev => prev.map(t => (t.id === id ? updated : t)));
     } catch (err) {
       alert('更新に失敗しました');
     }
   };
+
   const handleDelete = async (id: number) => {
     if (!confirm('本当に削除しますか？')) return;
     try {
