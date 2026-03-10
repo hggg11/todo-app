@@ -54,7 +54,7 @@ public class Todo {
 
     // 追加
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(255) DEFAULT 'ACTIVE'")
     @Builder.Default
     private Status status = Status.ACTIVE;
 
