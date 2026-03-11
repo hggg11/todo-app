@@ -46,7 +46,7 @@ function App() {
   const q = searchQuery.toLowerCase();
   const activeTodos = todos
     .filter(todo => {
-      todo.status === 'ACTIVE'
+      if (todo.status !== 'ACTIVE') return false;
       if (!todo.title.toLowerCase().includes(q) && !todo.description?.toLowerCase().includes(q)) return false;
       if (filterPriority !== 'ALL' && todo.priority !== filterPriority) return false;
       if (filterDueDate === 'TODAY' && todo.dueDate !== today) return false;
@@ -82,8 +82,9 @@ function App() {
     const [moved] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, moved);
     setTodos(prev => {
-      const completedItems = prev.filter(t => t.completed);
-      return [...items, ...completedItems];
+      // TODO　見直しが必要かも
+      const nonActiveItems = prev.filter(t => t.status !== 'ACTIVE');
+      return [...items, ...nonActiveItems];
     });
     try {
       await reorderTodos(items.map(t => t.id));
@@ -100,6 +101,7 @@ function App() {
         dueDate: newDueDate || undefined,
         priority: newPriority,
         icon: newIcon,
+        status: "ACTIVE"
       });
       setTodos(prev => [...prev, newTodo]);
       setNewTitle('');
@@ -149,7 +151,7 @@ function App() {
       const updated = await updateTodo(editingTodo.id, {
         title: editTitle.trim(),
         description: editDescription.trim() || undefined,
-        completed: editingTodo.completed,
+        status: editingTodo.status,
         dueDate: editDueDate || undefined,
         priority: editPriority,
         icon: editIcon,
@@ -340,10 +342,15 @@ function App() {
                             >
                               ⠿
                             </div>
+                            <select value={todo.status} onChange={ (e) => handleStatusChange(todo.id, e.target.value as Status)}>
+                              <option key="active" value={"ACTIVE"}>active</option>
+                              <option key="completed" value={"COMPLETED"}>completed</option>
+                              <option key="cancelled" value={"CANCELLED"}>cancelled</option>
+                            </select>
                             <input
                               type="checkbox"
-                              checked={todo.completed}
-                              onChange={() => handleToggle(todo.id, todo.completed)}
+                              checked={true}
+                              onChange={() => handleStatusChange(todo.id, todo.status)}
                               className="w-5 h-5"
                             />
                             <div className="flex-1">
@@ -404,7 +411,7 @@ function App() {
                         <input
                           type="checkbox"
                           checked={true}
-                          onChange={() => handleToggle(todo.id, true)}
+                          onChange={() => handleStatusChange(todo.id, todo.status)}
                           className="w-5 h-5"
                         />
                         <div className="flex-1">

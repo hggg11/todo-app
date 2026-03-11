@@ -1,6 +1,7 @@
 // TodoService.java
 package com.example.todobackend.service;
 
+import com.example.todobackend.entity.Status;
 import com.example.todobackend.entity.Todo;
 import com.example.todobackend.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class TodoService {
     }
 
     public Todo create(Todo todo) {
+        if (todo.getStatus() == null) todo.setStatus(Status.ACTIVE);
         return todoRepository.save(todo);
     }
 

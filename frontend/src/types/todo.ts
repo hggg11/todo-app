@@ -14,7 +14,7 @@ export interface Todo {
   icon?: string;
 }
 
-export type TodoCreateInput = Pick<Todo, "title" | "description" | "dueDate" | "priority" | "icon">;
+export type TodoCreateInput = Pick<Todo, "title" | "description" | "dueDate" | "priority" | "icon" | "status">;
 export type TodoUpdateInput = {
     title: string;
     description?: string;
