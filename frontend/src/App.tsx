@@ -34,7 +34,8 @@ function App() {
   const [editDescription, setEditDescription] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState<Priority>('MEDIUM');
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(true);
+  const [showcancelled, setShowCancelled] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<Priority | 'ALL'>('ALL');
   const [filterDueDate, setFilterDueDate] = useState<'ALL' | 'TODAY' | 'THIS_WEEK' | 'OVERDUE'>('ALL');
@@ -333,8 +334,9 @@ function App() {
                         <li
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
+                          className="items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
                         >
+                          <div className='flex'>
                           <div className="flex items-center gap-3 flex-1">
                             <div
                               {...provided.dragHandleProps}
@@ -343,37 +345,40 @@ function App() {
                               ⠿
                             </div>
                             <select value={todo.status} onChange={ (e) => handleStatusChange(todo.id, e.target.value as Status)}>
-                              <option key="active" value={"ACTIVE"}>active</option>
-                              <option key="completed" value={"COMPLETED"}>completed</option>
-                              <option key="cancelled" value={"CANCELLED"}>cancelled</option>
+                              <option key="active" value={"ACTIVE"}>未完了</option>
+                              <option key="completed" value={"COMPLETED"}>完了</option>
+                              <option key="cancelled" value={"CANCELLED"}>キャンセル</option>
                             </select>
-                            <input
-                              type="checkbox"
-                              checked={true}
-                              onChange={() => handleStatusChange(todo.id, todo.status)}
-                              className="w-5 h-5"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                {todo.icon && <span className="text-xl">{todo.icon}</span>}
-                                <span>{todo.title}</span>
-                                <PriorityBadge priority={todo.priority} />
+                            <PriorityBadge priority={todo.priority} />
+                            <div>
+                            <div className="flex justify-between items-center'">
+                              
+                              <div className='flex'>
+                                {todo.icon && <span className="text-xl">{todo.icon}</span>}                              
+                      
+                              <div className="items-center gap-2">
+                                  <span>{todo.title}</span>
+                                {todo.description && (
+                              <p className="text-sm text-gray-500 mt-1">{todo.description}</p>
+                            )}                                
+                              </div>                              
                               </div>
-                              {todo.description && (
-                                <p className="text-sm text-gray-600 mt-1">{todo.description}</p>
-                              )}
-                              {todo.dueDate && (
-                                <p className="text-xs text-gray-500 mt-1">期限: {todo.dueDate}</p>
-                              )}
+                            </div>
                             </div>
                           </div>
-                          <div className="flex gap-3">
+                          <div className="flex gap-3 items-center">
+                            <div>
+                              {todo.dueDate && (
+                                <p className="text-sm text-gray-500 mt-1">期限: {todo.dueDate}</p>
+                              )}
+                            </div>
                             <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
                               編集
                             </button>
                             <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">
                               削除
                             </button>
+                          </div>
                           </div>
                         </li>
                       )}
@@ -408,24 +413,27 @@ function App() {
                       className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
                     >
                       <div className="flex items-center gap-3 flex-1">
-                        <input
-                          type="checkbox"
-                          checked={true}
-                          onChange={() => handleStatusChange(todo.id, todo.status)}
-                          className="w-5 h-5"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            {todo.icon && <span className="text-xl">{todo.icon}</span>}
-                            <span className="line-through text-gray-600">{todo.title}</span>
-                            <PriorityBadge priority={todo.priority} />
+                        <select value={todo.status} onChange={ (e) => handleStatusChange(todo.id, e.target.value as Status)}>
+                          <option key="active" value={"ACTIVE"}>未完了</option>
+                          <option key="completed" value={"COMPLETED"}>完了</option>
+                          <option key="cancelled" value={"CANCELLED"}>キャンセル</option>
+                        </select>
+                        <PriorityBadge priority={todo.priority} />
+                        <div className="flex-1 flex">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              {todo.icon && <span className="text-xl">{todo.icon}</span>}
+                              <span className="text-blue-600">{todo.title}</span>                              
+                            </div>
+                            {todo.description && (
+                              <p className="text-sm text-blue-500 mt-1">{todo.description}</p>
+                            )}
                           </div>
-                          {todo.description && (
-                            <p className="text-sm text-gray-500 mt-1 line-through">{todo.description}</p>
-                          )}
+                          <div>
                           {todo.dueDate && (
-                            <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>
+                            <p className="text-xs text-blue-400 mt-1">期限: {todo.dueDate}</p>
                           )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-3">
@@ -442,6 +450,65 @@ function App() {
               )}
             </div>
           )}
+          {/* キャンセル済みセクション */}
+          {cancelledTodos.length > 0 && (
+            <div className="mt-8">
+              <button
+                onClick={() => setShowCancelled(!showcancelled)}
+                className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left"
+              >
+                <h2 className="text-xl font-semibold">
+                  キャンセル
+                  <span className="ml-2 text-sm font-normal text-gray-600">{cancelledTodos.length} 件</span>
+                </h2>
+                <span className="text-2xl font-bold">{showcancelled ? '−' : '+'}</span>
+              </button>
+              {showcancelled && (
+                <ul className="space-y-3 mt-3">
+                  {cancelledTodos.map(todo => (
+                    <li
+                      key={todo.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <select value={todo.status} onChange={ (e) => handleStatusChange(todo.id, e.target.value as Status)}>
+                          <option key="active" value={"ACTIVE"}>未完了</option>
+                          <option key="completed" value={"COMPLETED"}>完了</option>
+                          <option key="cancelled" value={"CANCELLED"}>キャンセル</option>
+                        </select>
+                        <div className="flex-1 flex">
+                          <div>
+                          <div className="flex items-center gap-2">
+                            {todo.icon && <span className="text-xl">{todo.icon}</span>}
+                            <span className="text-gray-600">{todo.title}</span>
+                            <PriorityBadge priority={todo.priority} />
+                          </div>
+                          {todo.description && (
+                            <p className="text-sm text-gray-500 mt-1">{todo.description}</p>
+                          )}
+                          </div>
+                          <div>
+                          {todo.dueDate && (
+                            <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>
+                          )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
+                          編集
+                        </button>
+                        <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">
+                          削除
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
         </>
         </div>
         {/* 右：カレンダー（スクロールしても固定） */}
