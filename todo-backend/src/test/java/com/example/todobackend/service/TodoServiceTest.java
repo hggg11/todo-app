@@ -31,13 +31,13 @@ class TodoServiceTest {
         Todo existing = Todo.builder()
                 .id(1L)
                 .title("古いタイトル")
-                .completed(false)
+                //.status()
                 .priority(Priority.MEDIUM)
                 .build();
 
         Todo updated = Todo.builder()
                 .title("新しいタイトル")
-                .completed(false)
+                //.completed(false)
                 .priority(Priority.HIGH)
                 .build();
 
@@ -56,9 +56,9 @@ class TodoServiceTest {
     @Test
     void reorder_sortOrderが順番通りに設定される() {
         // Arrange
-        Todo todo1 = Todo.builder().id(1L).title("タスク1").completed(false).priority(Priority.MEDIUM).build();
-        Todo todo2 = Todo.builder().id(2L).title("タスク2").completed(false).priority(Priority.MEDIUM).build();
-        Todo todo3 = Todo.builder().id(3L).title("タスク3").completed(false).priority(Priority.MEDIUM).build();
+        Todo todo1 = Todo.builder().id(1L).title("タスク1").priority(Priority.MEDIUM).build();
+        Todo todo2 = Todo.builder().id(2L).title("タスク2").priority(Priority.MEDIUM).build();
+        Todo todo3 = Todo.builder().id(3L).title("タスク3").priority(Priority.MEDIUM).build();
 
         when(todoRepository.findById(3L)).thenReturn(Optional.of(todo3));
         when(todoRepository.findById(1L)).thenReturn(Optional.of(todo1));
@@ -79,7 +79,7 @@ class TodoServiceTest {
         // Arrange
         Todo updated = Todo.builder()
                 .title("新しいタイトル")
-                .completed(false)
+             //   .completed(false)
                 .priority(Priority.HIGH)
                 .build();
 
