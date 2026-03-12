@@ -3,6 +3,7 @@ package com.example.todobackend.service;
 
 import com.example.todobackend.entity.Status;
 import com.example.todobackend.entity.Todo;
+import com.example.todobackend.exception.TodoNotFoundException;
 import com.example.todobackend.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,7 @@ public class TodoService {
                     todo.setIcon(updatedTodo.getIcon());
                     return todoRepository.save(todo);
                 })
-                .orElseThrow(() -> new RuntimeException("Todo not found"));
+                .orElseThrow(() -> new TodoNotFoundException(id));
     }
 
     public void delete(Long id) {
@@ -50,7 +51,8 @@ public class TodoService {
 
     public void reorder(List<Long> ids) {
         for (int i = 0; i < ids.size(); i++) {
-            Todo todo = todoRepository.findById(ids.get(i)).orElseThrow();
+            Long id = ids.get(i);
+            Todo todo = todoRepository.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
             todo.setSortOrder(i);
             todoRepository.save(todo);
         }
