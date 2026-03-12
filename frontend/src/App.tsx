@@ -392,9 +392,8 @@ function App() {
               )}
             </Droppable>
           </DragDropContext>
-          {/* 完了済みセクション */}
-          {completedTodos.length > 0 && (
-            <div className="mt-8">
+                   {/* 完了済みセクション */}
+          {completedTodos.length > 0 && 
               <button
                 onClick={() => setShowCompleted(!showCompleted)}
                 className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left"
@@ -404,52 +403,60 @@ function App() {
                   <span className="ml-2 text-sm font-normal text-gray-600">{completedTodos.length} 件</span>
                 </h2>
                 <span className="text-2xl font-bold">{showCompleted ? '−' : '+'}</span>
-              </button>
+              </button>}
               {showCompleted && (
                 <ul className="space-y-3 mt-3">
                   {completedTodos.map(todo => (
                     <li
                       key={todo.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <select value={todo.status} onChange={ (e) => handleStatusChange(todo.id, e.target.value as Status)}>
-                          <option key="active" value={"ACTIVE"}>未完了</option>
-                          <option key="completed" value={"COMPLETED"}>完了</option>
-                          <option key="cancelled" value={"CANCELLED"}>キャンセル</option>
-                        </select>
-                        <PriorityBadge priority={todo.priority} />
-                        <div className="flex-1 flex">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {todo.icon && <span className="text-xl">{todo.icon}</span>}
-                              <span className="text-blue-600">{todo.title}</span>                              
+                      className="items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
+                    >                    
+                       <div className='flex'>
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing text-xl select-none">
+                              ⠿
                             </div>
-                            {todo.description && (
-                              <p className="text-sm text-blue-500 mt-1">{todo.description}</p>
-                            )}
-                          </div>
-                          <div>
-                          {todo.dueDate && (
-                            <p className="text-xs text-blue-400 mt-1">期限: {todo.dueDate}</p>
-                          )}
-                          </div>
+                              <select value={todo.status} onChange={ (e) => handleStatusChange(todo.id, e.target.value as Status)}>
+                                <option key="active" value={"ACTIVE"}>未完了</option>
+                                <option key="completed" value={"COMPLETED"}>完了</option>
+                                <option key="cancelled" value={"CANCELLED"}>キャンセル</option>
+                              </select>
+                              <PriorityBadge priority={todo.priority} />
+                                <div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex">
+                                      {todo.icon && <span className="text-xl">{todo.icon}</span>}
+                                        <div className="items-center gap-2">
+                                          <span>{todo.title}</span>
+                                              {todo.description && (
+                                              <p className="text-sm text-blue-500 mt-1">{todo.description}</p>
+                                              )}
+						                            </div>
+							                      </div>
+                                  </div>
+                                </div>
+                             </div>
+                              <div className="flex gap-3 items-center">
+                                <div>
+                                  {todo.dueDate && (
+                                    <p className="text-sm text-blue-400 mt-1">期限: {todo.dueDate}</p>
+                                  )}
+                                </div>
+                                <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
+                                  編集
+                                </button>
+                                <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">
+                                  削除
+                                </button>
+                              </div>
                         </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
-                          編集
-                        </button>
-                        <button onClick={() => handleDelete(todo.id)} className="text-red-600 hover:text-red-800 font-medium">
-                          削除
-                        </button>
-                      </div>
                     </li>
-                  ))}
+              ))}
                 </ul>
-              )}
-            </div>
-          )}
+            )
+            
+          }
+          
           {/* キャンセル済みセクション */}
           {cancelledTodos.length > 0 && (
             <div className="mt-8">
