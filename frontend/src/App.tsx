@@ -458,8 +458,7 @@ function App() {
           }
           
           {/* キャンセル済みセクション */}
-          {cancelledTodos.length > 0 && (
-            <div className="mt-8">
+          {cancelledTodos.length > 0 &&             
               <button
                 onClick={() => setShowCancelled(!showcancelled)}
                 className="w-full flex justify-between items-center p-4 bg-gray-100 border rounded-lg hover:bg-gray-200 transition text-left"
@@ -469,39 +468,46 @@ function App() {
                   <span className="ml-2 text-sm font-normal text-gray-600">{cancelledTodos.length} 件</span>
                 </h2>
                 <span className="text-2xl font-bold">{showcancelled ? '−' : '+'}</span>
-              </button>
+              </button>}
               {showcancelled && (
                 <ul className="space-y-3 mt-3">
                   {cancelledTodos.map(todo => (
                     <li
                       key={todo.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
+                      className="items-center justify-between p-4 bg-gray-50 border rounded-lg opacity-80"
                     >
-                      <div className="flex items-center gap-3 flex-1">
+                    <div className='flex'>
+                      <div className="flex items-center gap-3 flex-1">                        
+                        <div className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing text-xl select-none">
+                              ⠿
+                        </div>
                         <select value={todo.status} onChange={ (e) => handleStatusChange(todo.id, e.target.value as Status)}>
                           <option key="active" value={"ACTIVE"}>未完了</option>
                           <option key="completed" value={"COMPLETED"}>完了</option>
                           <option key="cancelled" value={"CANCELLED"}>キャンセル</option>
                         </select>
-                        <div className="flex-1 flex">
-                          <div>
-                          <div className="flex items-center gap-2">
+                        <PriorityBadge priority={todo.priority} />
+                        <div>
+                        <div className="flex justify-between items-center">
+                          <div className='flex'>                          
                             {todo.icon && <span className="text-xl">{todo.icon}</span>}
+                            <div className="items-center gap-2">
                             <span className="text-gray-600">{todo.title}</span>
-                            <PriorityBadge priority={todo.priority} />
-                          </div>
-                          {todo.description && (
+                            {todo.description && (
                             <p className="text-sm text-gray-500 mt-1">{todo.description}</p>
                           )}
                           </div>
-                          <div>
+                          
+                          </div>
+                          </div>
+                          </div>
+                          </div>
+                          <div className="flex gap-3 items-center">
+                            <div>
                           {todo.dueDate && (
                             <p className="text-xs text-gray-400 mt-1">期限: {todo.dueDate}</p>
                           )}
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-3">
                         <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
                           編集
                         </button>
@@ -509,12 +515,14 @@ function App() {
                           削除
                         </button>
                       </div>
+                      </div>
                     </li>
                   ))}
                 </ul>
               )}
-            </div>
-          )}
+            )
+            
+
 
         </>
         </div>
