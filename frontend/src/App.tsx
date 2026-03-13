@@ -24,6 +24,10 @@ function App() {
   const [newTitle, setNewTitle] = useState('');
   const [newDueDate, setNewDueDate] = useState(new Date().toISOString().split("T")[0]);
   const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
+  // 関数の形（ファイル上部のpriority定義あたりに追加）
+  const isExpired = (todo: Todo): boolean => {
+      return !!todo.dueDate && todo.dueDate < today;
+  };
   const [newIcon, setNewIcon] = useState<string>('');
   const [editIcon, setEditIcon] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -69,6 +73,7 @@ function App() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     document.title = `TODO (${activeTodos.length}件)`;
   }, [activeTodos.length]);
@@ -334,7 +339,7 @@ function App() {
                         <li
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className="items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
+                          className={`items-center ${isExpired(todo) ? 'text-red-600 font-semi-bold' : 'text-gray-500'} justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition`}
                         >
                           <div className='flex'>
                           <div className="flex items-center gap-3 flex-1">
@@ -369,7 +374,7 @@ function App() {
                           <div className="flex gap-3 items-center">
                             <div>
                               {todo.dueDate && (
-                                <p className="text-sm text-gray-500 mt-1">期限: {todo.dueDate}</p>
+                                <p className={`text-sm ${isExpired(todo) ? 'text-red-600 font-semi-bold' : 'text-gray-500'}  mt-1`}>期限: {todo.dueDate}</p>
                               )}
                             </div>
                             <button onClick={() => startEdit(todo)} className="text-blue-600 hover:text-blue-800 font-medium">
