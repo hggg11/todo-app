@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import type { Todo, Priority, Status } from './types/todo';
 import { getTodos, createTodo, updateTodo, deleteTodo, reorderTodos } from './lib/api';
@@ -24,7 +24,7 @@ function App() {
   const [newTitle, setNewTitle] = useState('');
   const [newDueDate, setNewDueDate] = useState(new Date().toISOString().split("T")[0]);
   const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
-  // 関数の形（ファイル上部のpriority定義あたりに追加）
+  const editTitleRef = useRef<HTMLInputElement>(null);
   const isExpired = (todo: Todo): boolean => {
       return !!todo.dueDate && todo.dueDate < today;
   };
@@ -44,6 +44,8 @@ function App() {
   const [filterPriority, setFilterPriority] = useState<Priority | 'ALL'>('ALL');
   const [filterDueDate, setFilterDueDate] = useState<'ALL' | 'TODAY' | 'THIS_WEEK' | 'OVERDUE'>('ALL');
   const [activeTab, setActiveTab] = useState<'todos' | 'calendar'>('todos');
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [secondsAgo, setsecondsAgo] = useState(0);
   const today = new Date().toISOString().split('T')[0];
   const nextWeekDate = new Date();
   nextWeekDate.setDate(nextWeekDate.getDate() + 7);
@@ -67,6 +69,7 @@ function App() {
       setLoading(true);
       const data = await getTodos();
       setTodos(data);
+      setLastFetched(new Date());
     } catch (err) {
       console.error('Failed to fetch todos', err);
     } finally {
@@ -81,6 +84,21 @@ function App() {
   useEffect(() => {
     fetchTodos();
   }, []);
+
+  useEffect(() => {
+    if (!lastFetched) return;
+    setsecondsAgo(0);
+    const timer = setInterval(() => {
+      setsecondsAgo(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  },[lastFetched])
+
+  useEffect(() => {
+    if(isModalOpen) {
+      editTitleRef.current?.focus();
+    }
+  },[isModalOpen]);
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     if (result.source.index === result.destination.index) return;
@@ -322,8 +340,8 @@ function App() {
           {loading && <p className="text-center">読み込み中...</p>}
           {/* 未完了タスク */}
           <h2 className="text-xl font-semibold mb-4 flex justify-between items-center">
-            未完了のタスク
-            <span className="text-sm font-normal text-gray-600">{activeTodos.length} 件</span>
+            未完了のタスク  
+            <span className="text-sm font-normal text-gray-600">{secondsAgo}秒前取得 <br/> {activeTodos.length} 件</span>
           </h2>
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="active-todos">
@@ -567,6 +585,7 @@ function App() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">タイトル（必須）</label>
             <input
+              ref={editTitleRef}
               type="text"
               value={editTitle}
               onChange={e => setEditTitle(e.target.value)}
