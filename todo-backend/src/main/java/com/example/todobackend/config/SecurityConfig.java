@@ -1,5 +1,6 @@
 package com.example.todobackend.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +26,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()  // ログインは認証不要
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, e) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED,"Unauthorized");
+                        }));
+
         return http.build();
     }
 
