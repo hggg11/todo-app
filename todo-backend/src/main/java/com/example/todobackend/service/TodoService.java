@@ -5,6 +5,7 @@ import com.example.todobackend.entity.Status;
 import com.example.todobackend.entity.Todo;
 import com.example.todobackend.entity.User;
 import com.example.todobackend.exception.TodoNotFoundException;
+import com.example.todobackend.exception.UserNotFoundException;
 import com.example.todobackend.repository.TodoRepository;
 import com.example.todobackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,6 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
     private final UserRepository userRepository;
-
     public List<Todo> findByUserUsername (String username) {
         return todoRepository.findByUserUsername(username);
     }
@@ -31,13 +31,13 @@ public class TodoService {
 
     public Todo create(Todo todo, String username) {
         if (todo.getStatus() == null) todo.setStatus(Status.ACTIVE);
-        Optional<User> user = userRepository.findByUsername(username);
-        todo.setUser(user.get());
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
+        todo.setUser(user);
         return todoRepository.save(todo);
     }
 
-    public Todo update(Long id, Todo updatedTodo) {
-        return todoRepository.findById(id)
+    public Todo update(Long id, Todo updatedTodo, String username) {
+        return todoRepository.findByIdAndUserUsername(id, username)
                 .map(todo -> {
                     todo.setTitle(updatedTodo.getTitle());
                     todo.setDescription(updatedTodo.getDescription());
@@ -47,17 +47,18 @@ public class TodoService {
                     todo.setIcon(updatedTodo.getIcon());
                     return todoRepository.save(todo);
                 })
-                .orElseThrow(() -> new TodoNotFoundException(id));
+                .orElseThrow(() -> new TodoNotFoundException(id, username));
     }
 
-    public void delete(Long id) {
-        todoRepository.deleteById(id);
+    public void delete(Long id, String username) {
+        Todo todo = todoRepository.findByIdAndUserUsername(id, username).orElseThrow(() -> new TodoNotFoundException(id,username));
+        todoRepository.delete(todo);
     }
 
-    public void reorder(List<Long> ids) {
+    public void reorder(List<Long> ids, String username) {
         for (int i = 0; i < ids.size(); i++) {
             Long id = ids.get(i);
-            Todo todo = todoRepository.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
+            Todo todo = todoRepository.findByIdAndUserUsername(id, username).orElseThrow(() -> new TodoNotFoundException(id, username));
             todo.setSortOrder(i);
             todoRepository.save(todo);
         }

@@ -1,8 +1,7 @@
 package com.example.todobackend.exception;
 
 public class TodoNotFoundException extends RuntimeException {
-    // コンストラクタに何を書けばいいでしょう？
-    public TodoNotFoundException(Long id) {
-        super(String.format("(ID: %d)が見つかりませんでした。", id));
+    public TodoNotFoundException(Long id,  String username) {
+        super(String.format("(ID: %d, Username: %d)が見つかりませんでした。", id, username));
     }
 }

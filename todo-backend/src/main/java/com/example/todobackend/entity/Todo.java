@@ -39,7 +39,7 @@ public class Todo {
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "use_id")
+    @JoinColumn(name = "user_id")
     private User user;
 
     @PrePersist
