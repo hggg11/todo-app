@@ -1,9 +1,10 @@
 package com.example.todobackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
-
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "users")  // "user" はSQLの予約語なので "users" にする
 @Getter

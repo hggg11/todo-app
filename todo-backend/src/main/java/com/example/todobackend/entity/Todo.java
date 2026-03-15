@@ -1,6 +1,7 @@
 // Todo.java
 package com.example.todobackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,6 +39,7 @@ public class Todo {
 
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
