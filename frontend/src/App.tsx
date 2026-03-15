@@ -82,8 +82,8 @@ function App() {
   }, [activeTodos.length]);
 
   useEffect(() => {
-    fetchTodos();
-  }, []);
+    isLoggedIn&&fetchTodos();
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (!lastFetched) return;

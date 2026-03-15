@@ -17,13 +17,20 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         // すでにユーザーがいなければ作成
-        if (userRepository.count() == 0) {
+        if (userRepository.count() < 2) {
             User user = User.builder()
                     .username("admin")
                     .password(passwordEncoder.encode("password123"))
                     .build();
-            userRepository.save(user);
+            //userRepository.save(user);
+
+            User user2 = User.builder()
+                    .username("masahiro")
+                    .password(passwordEncoder.encode("password234"))
+                    .build();
+            userRepository.save(user2);
             System.out.println("テストユーザーを作成しました: admin / password123");
+            System.out.println("テストユーザーを作成しました: masahiro / password234");
         }
     }
 }
