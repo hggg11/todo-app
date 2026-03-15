@@ -3,8 +3,10 @@ package com.example.todobackend.service;
 
 import com.example.todobackend.entity.Status;
 import com.example.todobackend.entity.Todo;
+import com.example.todobackend.entity.User;
 import com.example.todobackend.exception.TodoNotFoundException;
 import com.example.todobackend.repository.TodoRepository;
+import com.example.todobackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,17 +19,20 @@ import java.util.Optional;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final UserRepository userRepository;
 
-    public List<Todo> findAll() {
-        return todoRepository.findAll();
+    public List<Todo> findByUserUsername (String username) {
+        return todoRepository.findByUserUsername(username);
     }
 
-    public Optional<Todo> findById(Long id) {
-        return todoRepository.findById(id);
+    public Optional<Todo> findByIdAndUserUsername(Long id, String username) {
+        return todoRepository.findByIdAndUserUsername(id, username);
     }
 
-    public Todo create(Todo todo) {
+    public Todo create(Todo todo, String username) {
         if (todo.getStatus() == null) todo.setStatus(Status.ACTIVE);
+        Optional<User> user = userRepository.findByUsername(username);
+        todo.setUser(user.get());
         return todoRepository.save(todo);
     }
 
