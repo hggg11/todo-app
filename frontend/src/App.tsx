@@ -10,7 +10,7 @@ const priorityConfig: Record<Priority, { label: string; className: string }> = {
   MEDIUM: { label: '中', className: 'bg-yellow-100 text-yellow-700' },
   LOW: { label: '低', className: 'bg-green-100 text-green-700' },
 };
-const ICONS = ['📝', '💼', '📚', '🏃', '🍳', '🛒', '💪', '🎮', '🎵', '🏠', '✈️', '💊', '💻', '🛀', '🎬'];
+const ICONS = ['📝', '💼', '📚', '🏃', '🍳', '🛒', '💪', '🎮', '🎵', '🏠', '✈️', '💊', '💻', '🛀', '🎬', '🍎', '🍌', '🥬'];
 function PriorityBadge({ priority }: { priority: Priority }) {
   const { label, className } = priorityConfig[priority];
   return (
@@ -28,8 +28,8 @@ function App() {
   const isExpired = (todo: Todo): boolean => {
       return !!todo.dueDate && todo.dueDate < today;
   };
-  const [newIcon, setNewIcon] = useState<string>('');
-  const [editIcon, setEditIcon] = useState<string>('');
+  const [newIcon, setNewIcon] = useState<string>('📝');
+  const [editIcon, setEditIcon] = useState<string>('📝');
   const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,9 +129,9 @@ function App() {
       });
       setTodos(prev => [...prev, newTodo]);
       setNewTitle('');
-      setNewDueDate('');
+      setNewDueDate(new Date().toISOString().split('T')[0]);
       setNewPriority('MEDIUM');
-      setNewIcon('');
+      setNewIcon('📝');
     } catch (err) {
       alert('追加に失敗しました');
     }
