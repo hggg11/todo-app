@@ -10,7 +10,7 @@ const priorityConfig: Record<Priority, { label: string; className: string }> = {
   MEDIUM: { label: '中', className: 'bg-yellow-100 text-yellow-700' },
   LOW: { label: '低', className: 'bg-green-100 text-green-700' },
 };
-const ICONS = ['📝', '💼', '📚', '🏃', '🍳', '🛒', '💪', '🎮', '🎵', '🏠', '✈️', '💊', '💻', '🛀', '🎬', '🍎', '🍌', '🥬'];
+const ICONS = ['📝', '💼', '📚', '🏃', '🍳', '🛒', '👖', '💪', '🎮', '🎵', '🏠', '✈️', '💊', '💻', '🛀', '🎬', '🍎', '🍌', '🥬'];
 function PriorityBadge({ priority }: { priority: Priority }) {
   const { label, className } = priorityConfig[priority];
   return (
@@ -212,7 +212,7 @@ function App() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            📋 TODOリスト
+            📋 TODO
           </button>
           <button
             onClick={() => setActiveTab('calendar')}
@@ -222,7 +222,7 @@ function App() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            📅 カレンダー
+            📅✍ カレンダー詳細
           </button>
         </div>
         <button onClick={handleLogout}>ログアウト</button>
