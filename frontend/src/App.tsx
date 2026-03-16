@@ -228,7 +228,8 @@ function App() {
         <button onClick={handleLogout}>ログアウト</button>
       </div>
       {/* メインコンテンツ：左にTODO、右にカレンダー */}
-      <div className="flex gap-10 items-start">
+      {activeTab === 'todos' && (
+        <div className="flex gap-10 items-start">
 
         {/* 左：TODOリスト */}
         <div className="w-2/5 min-w-0">
@@ -374,7 +375,7 @@ function App() {
                             </select>
                             <PriorityBadge priority={todo.priority} />
                             <div>
-                            <div className="flex justify-between items-center'">
+                            <div className="flex justify-between items-center">
                               
                               <div className='flex'>
                                 {todo.icon && <span className="text-xl">{todo.icon}</span>}                              
@@ -555,6 +556,9 @@ function App() {
         </div>
 
       </div>
+      ) }
+      {activeTab === 'calendar' && (<p>kara</p>)}
+      
 
       {/* 編集モーダル */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="タスクを編集">
