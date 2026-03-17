@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable} from '@hello-pangea/dnd';
 import type { Todo, Priority, Status } from './types/todo';
-import { getTodos, createTodo, updateTodo, deleteTodo, reorderTodos } from './lib/api';
 import Modal from './components/Modal';
 import LoginForm from './components/LoginForm';
 import Calendar from './components/Calendar';
+import { useTodos } from './hooks/useTodos';
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   HIGH: { label: '高', className: 'bg-red-100 text-red-700' },
   MEDIUM: { label: '中', className: 'bg-yellow-100 text-yellow-700' },
@@ -20,7 +20,7 @@ function PriorityBadge({ priority }: { priority: Priority }) {
   );
 }
 function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const {todos, loading, secondsAgo, lastFetched, fetchTodos, handleDragEnd, handleAdd, handleStatusChange, handleDelete, handleEdit} = useTodos();
   const [newTitle, setNewTitle] = useState('');
   const [newDueDate, setNewDueDate] = useState(new Date().toISOString().split("T")[0]);
   const [newPriority, setNewPriority] = useState<Priority>('MEDIUM');
@@ -30,7 +30,6 @@ function App() {
   };
   const [newIcon, setNewIcon] = useState<string>('📝');
   const [editIcon, setEditIcon] = useState<string>('📝');
-  const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
@@ -44,8 +43,6 @@ function App() {
   const [filterPriority, setFilterPriority] = useState<Priority | 'ALL'>('ALL');
   const [filterDueDate, setFilterDueDate] = useState<'ALL' | 'TODAY' | 'THIS_WEEK' | 'OVERDUE'>('ALL');
   const [activeTab, setActiveTab] = useState<'todos' | 'calendar'>('todos');
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-  const [secondsAgo, setsecondsAgo] = useState(0);
   const today = new Date().toISOString().split('T')[0];
   const nextWeekDate = new Date();
   nextWeekDate.setDate(nextWeekDate.getDate() + 7);
@@ -64,19 +61,7 @@ function App() {
     .sort((a, b) => (a.sortOrder ?? Infinity) - (b.sortOrder ?? Infinity));
   const completedTodos = todos.filter(todo => todo.status === 'COMPLETED');
   const cancelledTodos = todos.filter(todo => todo.status === 'CANCELLED');
-  const fetchTodos = async () => {
-    try {
-      setLoading(true);
-      const data = await getTodos();
-      setTodos(data);
-      setLastFetched(new Date());
-    } catch (err) {
-      console.error('Failed to fetch todos', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
   useEffect(() => {
     isLoggedIn ? document.title = `TODO (${activeTodos.length}件)`
       : document.title = "ログイン"
@@ -87,76 +72,10 @@ function App() {
   }, [isLoggedIn]);
 
   useEffect(() => {
-    if (!lastFetched) return;
-    setsecondsAgo(0);
-    const timer = setInterval(() => {
-      setsecondsAgo(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  },[lastFetched])
-
-  useEffect(() => {
     if(isModalOpen) {
       editTitleRef.current?.focus();
     }
   },[isModalOpen]);
-  const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
-    if (result.source.index === result.destination.index) return;
-    const items = Array.from(activeTodos);
-    const [moved] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, moved);
-    setTodos(prev => {
-      // TODO　見直しが必要かも
-      const nonActiveItems = prev.filter(t => t.status !== 'ACTIVE');
-      return [...items, ...nonActiveItems];
-    });
-    try {
-      await reorderTodos(items.map(t => t.id));
-    } catch {
-      fetchTodos();
-    }
-  };
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    try {
-      const newTodo = await createTodo({
-        title: newTitle.trim(),
-        dueDate: newDueDate || undefined,
-        priority: newPriority,
-        icon: newIcon,
-        status: "ACTIVE"
-      });
-      setTodos(prev => [...prev, newTodo]);
-      setNewTitle('');
-      setNewDueDate(new Date().toISOString().split('T')[0]);
-      setNewPriority('MEDIUM');
-      setNewIcon('📝');
-    } catch (err) {
-      alert('追加に失敗しました');
-    }
-  };
-  const handleStatusChange = async (id: number, newStatus: Status) => {
-    try {
-      const todo = todos.find(t => t.id === id);
-      if (!todo) return;
-      const updated = await updateTodo(id, { ...todo, status: newStatus });
-      setTodos(prev => prev.map(t => (t.id === id ? updated : t)));
-    } catch (err) {
-      alert('更新に失敗しました');
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('本当に削除しますか？')) return;
-    try {
-      await deleteTodo(id);
-      setTodos(prev => prev.filter(t => t.id !== id));
-    } catch (err) {
-      alert('削除に失敗しました');
-    }
-  };
   const startEdit = (todo: Todo) => {
     setEditingTodo(todo);
     setEditTitle(todo.title);
@@ -169,23 +88,20 @@ function App() {
   const handleSaveEdit = async () => {
     if (!editingTodo) return;
     if (!editTitle.trim()) {
-      alert('タイトルは必須です');
-      return;
+        alert('タイトルは必須です');
+        return;
     }
-    try {
-      const updated = await updateTodo(editingTodo.id, {
-        title: editTitle.trim(),
-        description: editDescription.trim() || undefined,
-        status: editingTodo.status,
-        dueDate: editDueDate || undefined,
-        priority: editPriority,
-        icon: editIcon,
-      });
-      setTodos(prev => prev.map(t => t.id === editingTodo.id ? updated : t));
+    const success = await handleEdit(editingTodo.id, {
+      title: editTitle.trim(),
+      description: editDescription.trim() || undefined,
+      status: editingTodo.status,
+      dueDate: editDueDate || undefined,
+      priority: editPriority,
+      icon: editIcon,
+    });
+    if (success) {
       setIsModalOpen(false);
       setEditingTodo(null);
-    } catch (err) {
-      alert('更新に失敗しました');
     }
   };
   const handleLogout = () => {
@@ -237,7 +153,18 @@ function App() {
           {/* 検索〜完了済みセクションをここに移動 */}
           {/* 追加フォーム */}
           <>
-          <form onSubmit={handleAdd} className="mb-10 space-y-2">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (!newTitle.trim()) return;
+            handleAdd({
+              title: newTitle.trim(),
+              dueDate: newDueDate,
+              priority: newPriority,
+              icon: newIcon,
+              status: 'ACTIVE',
+            }); 
+            setNewTitle('');
+          }} className="mb-10 space-y-2">
             <div className="flex"> 
               <input
                 type="text"
@@ -345,7 +272,7 @@ function App() {
             未完了のタスク  
             <span className="text-sm font-normal text-gray-600">{secondsAgo}秒前取得 <br/> {activeTodos.length} 件</span>
           </h2>
-          <DragDropContext onDragEnd={handleDragEnd}>
+          <DragDropContext onDragEnd={(result) => handleDragEnd(result, activeTodos)}>
             <Droppable droppableId="active-todos">
               {(provided) => (
                 <ul
