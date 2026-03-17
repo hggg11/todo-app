@@ -78,8 +78,9 @@ function App() {
   };
 
   useEffect(() => {
-    document.title = `TODO (${activeTodos.length}件)`;
-  }, [activeTodos.length]);
+    isLoggedIn ? document.title = `TODO (${activeTodos.length}件)`
+      : document.title = "ログイン"
+  }, [activeTodos.length, isLoggedIn]);
 
   useEffect(() => {
     isLoggedIn&&fetchTodos();
