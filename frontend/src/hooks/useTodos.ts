@@ -36,16 +36,20 @@ export function useTodos() {
         const [moved] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, moved);
         setTodos(prev => {
-        // TODO　見直しが必要かも
+            const sortItems = items.map((todo, index) => ({
+                ...todo,
+                sortOrder: index  // indexを使って新しい値を入れる
+            }))
+            // TODO　見直しが必要かも
             const nonActiveItems = prev.filter(t => t.status !== 'ACTIVE');
-            return [...items, ...nonActiveItems];
+            return [...sortItems, ...nonActiveItems];
         });
         try {
             await reorderTodos(items.map(t => t.id));
         } catch {
             fetchTodos();
         }
-  };
+    };
   const handleAdd = async (input: TodoCreateInput) => {
     try {
       const newTodo = await createTodo(input);
