@@ -53,7 +53,7 @@ export function useTodos() {
   const handleAdd = async (input: TodoCreateInput) => {
     try {
       const newTodo = await createTodo(input);
-      setTodos(prev => [...prev, newTodo]);
+      setTodos(prev => [newTodo, ...prev]);
     } catch (err) {
       alert('追加に失敗しました');
     }

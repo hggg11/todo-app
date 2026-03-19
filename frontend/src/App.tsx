@@ -37,6 +37,7 @@ function App() {
   nextWeekDate.setDate(nextWeekDate.getDate() + 7);
   const nextWeek = nextWeekDate.toISOString().split('T')[0];
   const q = searchQuery.toLowerCase();
+  const isFiltering = searchQuery !== '' || filterDueDate !== 'ALL' || filterPriority !== 'ALL';
   const activeTodos = todos
     .filter(todo => {
       if (todo.status !== 'ACTIVE') return false;
@@ -47,7 +48,7 @@ function App() {
       if (filterDueDate === 'THIS_WEEK' && (!todo.dueDate || todo.dueDate < today || todo.dueDate > nextWeek)) return false;
       return true;
     })
-    .sort((a, b) => (a.sortOrder ?? Infinity) - (b.sortOrder ?? Infinity));
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   const completedTodos = todos.filter(todo => todo.status === 'COMPLETED');
   const cancelledTodos = todos.filter(todo => todo.status === 'CANCELLED');
   
@@ -261,6 +262,11 @@ function App() {
             未完了のタスク  
             <span className="text-sm font-normal text-gray-600">{secondsAgo}秒前取得 <br/> {activeTodos.length} 件</span>
           </h2>
+          {isFiltering && (
+            <p className="text-xs text-gray-400 mb-2">
+              ⚠️ フィルター中はドラッグ並び替えができません
+            </p>
+          )}
           <DragDropContext onDragEnd={(result) => handleDragEnd(result, activeTodos)}>
             <Droppable droppableId="active-todos">
               {(provided) => (
@@ -270,7 +276,7 @@ function App() {
                   className="space-y-3 mb-12"
                 >
                   {activeTodos.map((todo, index) => (
-                    <Draggable key={todo.id} draggableId={String(todo.id)} index={index}>
+                    <Draggable key={todo.id} draggableId={String(todo.id)} index={index} isDragDisabled={isFiltering}>
                       {(provided)=> (
                         <TodoItem key={todo.id} todo={todo} onEdit={startEdit} onStatusChange={handleStatusChange} onDelete={handleDelete} dragHandleProps={provided.dragHandleProps??undefined} draggableProps={provided.draggableProps} innerRef={provided.innerRef}/>
                       )}

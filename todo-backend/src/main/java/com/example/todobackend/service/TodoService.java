@@ -33,6 +33,12 @@ public class TodoService {
         if (todo.getStatus() == null) todo.setStatus(Status.ACTIVE);
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
         todo.setUser(user);
+        var list = this.findByUserUsername(username);
+        int minSortOrder = list.stream()
+                .mapToInt(t -> t.getSortOrder() != null ? t.getSortOrder() : 0)
+                .min()
+                .orElse(0);
+        todo.setSortOrder(--minSortOrder);
         return todoRepository.save(todo);
     }
 
