@@ -23,8 +23,7 @@ public class Pair<A, B> {
         Pair<String, Integer> pair = new  Pair<>("Alice", 30);
         System.out.println("name:" + pair.getFirst());
         System.out.println("age:" + pair.getSecond());
-        Utils.findMax(List.of(3, 1, 4, 1, 5));     // → 5
-        Utils.findMax(List.of("banana", "apple")).ifPresent(System.out.println("最大値：　" + max));
-        Utils.findMax(List.of("banana", "apple", null)).ifPresent(System.out.println("最大値：　" + max));
+        Utils.findMax(List.of(3, 1, 4, 1, 5)).ifPresent(max -> System.out.println("最大値：　" + max));
+        Utils.findMax(List.of("banana", "apple")).ifPresent(max -> System.out.println("最大値：　" + max));
     }
 }
