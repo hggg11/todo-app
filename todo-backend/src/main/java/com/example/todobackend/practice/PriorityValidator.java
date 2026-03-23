@@ -1,5 +1,8 @@
 package com.example.todobackend.practice;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class PriorityValidator extends BaseValidator<String> implements Validator<String> {
     //課題1
     @Override

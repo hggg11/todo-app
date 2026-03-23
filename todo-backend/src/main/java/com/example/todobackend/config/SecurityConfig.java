@@ -23,7 +23,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()  // ログインは認証不要
+                        .requestMatchers("/api/auth/**").permitAll()  //
+                        .requestMatchers("/api/greeting/**").permitAll()  // ← この1行を追加
+                        .requestMatchers("/api/validate/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
