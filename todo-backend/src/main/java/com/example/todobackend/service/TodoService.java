@@ -1,6 +1,9 @@
 // TodoService.java
 package com.example.todobackend.service;
 
+import com.example.todobackend.dto.TodoRequest;
+import com.example.todobackend.dto.TodoResponse;
+import com.example.todobackend.entity.Priority;
 import com.example.todobackend.entity.Status;
 import com.example.todobackend.entity.Todo;
 import com.example.todobackend.entity.User;
@@ -14,6 +17,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -21,15 +26,40 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
     private final UserRepository userRepository;
-    public List<Todo> findByUserUsername (String username) {
-        return todoRepository.findByUserUsername(username);
+    private TodoResponse toResponse(Todo todo) {
+        TodoResponse res = new  TodoResponse();
+        res.setId(todo.getId());
+        res.setTitle(todo.getTitle());
+        res.setPriority(todo.getPriority() != null ? todo.getPriority().name() : null);
+        res.setStatus(todo.getStatus() != null ? todo.getStatus().name() : null);
+        res.setDescription(todo.getDescription());
+        res.setDueDate(todo.getDueDate());
+        res.setIcon(todo.getIcon());
+        res.setCreatedAt(todo.getCreatedAt());
+        res.setUpdatedAt(todo.getUpdatedAt());
+        res.setSortOrder(todo.getSortOrder());
+        return res;
+    }
+    private Todo toEntity(TodoRequest request) {
+        Todo todo = new Todo();
+        todo.setTitle(request.getTitle());
+        todo.setDescription(request.getDescription());
+        todo.setPriority(request.getPriority() != null ? Priority.valueOf(request.getPriority()) : Priority.MEDIUM);
+        todo.setStatus(request.getStatus() != null ? Status.valueOf(request.getStatus()) : Status.ACTIVE);
+        todo.setIcon(request.getIcon());
+        todo.setDueDate(request.getDueDate());
+        return todo;
+    }
+    public List<TodoResponse> findByUserUsername (String username) {
+        return todoRepository.findByUserUsername(username).stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    public Optional<Todo> findByIdAndUserUsername(Long id, String username) {
-        return todoRepository.findByIdAndUserUsername(id, username);
+    public Optional<TodoResponse> findByIdAndUserUsername(Long id, String username) {
+        return todoRepository.findByIdAndUserUsername(id, username).map(todo -> toResponse(todo));
     }
 
-    public Todo create(Todo todo, String username) {
+    public TodoResponse create(TodoRequest request, String username) {
+        Todo todo = this.toEntity(request);
         if (todo.getStatus() == null) todo.setStatus(Status.ACTIVE);
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
         todo.setUser(user);
@@ -39,11 +69,12 @@ public class TodoService {
                 .min()
                 .orElse(0);
         todo.setSortOrder(--minSortOrder);
-        return todoRepository.save(todo);
+        return this.toResponse(todoRepository.save(todo));
     }
 
-    public Todo update(Long id, Todo updatedTodo, String username) {
-        return todoRepository.findByIdAndUserUsername(id, username)
+    public TodoResponse update(Long id,TodoRequest request, String username) {
+        Todo updatedTodo =  this.toEntity(request);
+        return this.toResponse(todoRepository.findByIdAndUserUsername(id, username)
                 .map(todo -> {
                     todo.setTitle(updatedTodo.getTitle());
                     todo.setDescription(updatedTodo.getDescription());
@@ -53,7 +84,7 @@ public class TodoService {
                     todo.setIcon(updatedTodo.getIcon());
                     return todoRepository.save(todo);
                 })
-                .orElseThrow(() -> new TodoNotFoundException(id, username));
+                .orElseThrow(() -> new TodoNotFoundException(id, username)));
     }
 
     public void delete(Long id, String username) {
