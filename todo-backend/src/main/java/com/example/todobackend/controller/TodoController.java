@@ -59,4 +59,14 @@ public class TodoController {
         todoService.reorder(ids, getUsername());
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<TodoResponse>> searchByTitle(@RequestParam String keyword) {
+        return ResponseEntity.ok(todoService.searchByTitle(getUsername(), keyword));
+    }
+
+    @GetMapping("/priority")
+    public ResponseEntity<List<TodoResponse>> searchByPriority(@RequestParam String priority) {
+        return ResponseEntity.ok(todoService.findByPriority(getUsername(), priority));
+    }
 }

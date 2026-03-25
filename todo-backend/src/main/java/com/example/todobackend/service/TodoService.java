@@ -101,4 +101,11 @@ public class TodoService {
         }
     }
 
+    public List<TodoResponse> searchByTitle(String username, String keyword) {
+        return todoRepository.searchByTitle(username, keyword).stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    public List<TodoResponse> findByPriority(String username, String priority) {
+        return todoRepository.findByUserUsernameAndPriority(username, Priority.valueOf(priority)).stream().map(this::toResponse).collect(Collectors.toList());
+    }
 }
